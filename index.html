@@ -73,7 +73,7 @@
             <button type="button" onclick="setTaxRate(0.40)" class="rate-btn py-2 text-xs font-semibold rounded-lg border border-[#D9D0C3] bg-[#FAF8F5] hover:bg-[#F3EFE9] transition">40%</button>
           </div>
           <p id="rateNotice" class="text-[11px] text-[#8C8075] pt-1">
-            20% 級距：境內股利扣除 8.5% 抵減後，邊際實質稅率仍達 11.5%。
+            20% 級距：扣減 8.5% 抵減後邊際稅率仍達 11.5%，每領 100 萬股利扣除約 13.6 萬。
           </p>
         </div>
 
@@ -270,6 +270,43 @@
           </div>
         </div>
       </div>
+
+      <!-- 重新加入的 3 個法規亮點卡片 -->
+      <div class="space-y-3 pt-2">
+        <!-- 卡片 1 -->
+        <div class="bg-white/80 rounded-2xl p-4 sm:p-5 border border-[#E8E2D7] shadow-sm space-y-1.5">
+          <div class="flex items-center space-x-2.5">
+            <span class="w-6 h-6 rounded-full bg-[#E1ECE2] text-[#3A6B44] text-xs font-bold flex items-center justify-center">1</span>
+            <h3 class="text-sm font-bold text-[#2E2A27]">免二代健保補充保費</h3>
+          </div>
+          <p class="text-xs text-[#6B5F54] pl-8.5 leading-relaxed">
+            海外所得依法完全不屬於健保法規定的六類所得，每年配發多少息收，健保補充保費皆為 <strong class="text-[#2E2A27]">0 元</strong>。
+          </p>
+        </div>
+
+        <!-- 卡片 2 -->
+        <div class="bg-white/80 rounded-2xl p-4 sm:p-5 border border-[#E8E2D7] shadow-sm space-y-1.5">
+          <div class="flex items-center space-x-2.5">
+            <span class="w-6 h-6 rounded-full bg-[#E1ECE2] text-[#3A6B44] text-xs font-bold flex items-center justify-center">2</span>
+            <h3 class="text-sm font-bold text-[#2E2A27]">100 萬免申報安全門檻</h3>
+          </div>
+          <p class="text-xs text-[#6B5F54] pl-8.5 leading-relaxed">
+            全申報戶全年海外所得總額（息收＋資本利得）未達 <strong class="text-[#2E2A27]">NT$ 100 萬</strong>，依法全數免計入基本所得額，零申報負擔。
+          </p>
+        </div>
+
+        <!-- 卡片 3 -->
+        <div class="bg-white/80 rounded-2xl p-4 sm:p-5 border border-[#E8E2D7] shadow-sm space-y-1.5">
+          <div class="flex items-center space-x-2.5">
+            <span class="w-6 h-6 rounded-full bg-[#E1ECE2] text-[#3A6B44] text-xs font-bold flex items-center justify-center">3</span>
+            <h3 class="text-sm font-bold text-[#2E2A27]">750 萬最低稅負免稅額</h3>
+          </div>
+          <p class="text-xs text-[#6B5F54] pl-8.5 leading-relaxed">
+            個人基本所得額享有每年 <strong class="text-[#2E2A27]">NT$ 750 萬</strong>之免稅額度，且只在「基本稅額大於一般綜所稅」時才需補差額。
+          </p>
+        </div>
+      </div>
+
     </div>
 
   </main>
@@ -277,9 +314,9 @@
   <script>
     let currentRate = 0.20;
     const bracketInfo = {
-      0.05: '5% 級距：境內股利享 8.5% 抵減，具 3.5% 扣抵優勢，扣除健保 2.11% 後實質仍微幅正收益。',
+      0.05: '5% 級距：若為純配息所得享有 8.5% 退稅優勢；若加計本業收入，大額股利可能跨級推擠至 12%。',
       0.12: '12% 級距：境內股利扣減 8.5% 後邊際稅率為 3.5%，加計健保 2.11%，實質摩擦率為 5.61%。',
-      0.20: '20% 級距：扣減 8.5% 後邊際稅率為 11.5%，加計健保 2.11%，每領 100 萬股利扣除 13.6 萬。',
+      0.20: '20% 級距：扣減 8.5% 後邊際稅率為 11.5%，加計健保 2.11%，每領 100 萬股利扣除約 13.6 萬。',
       0.30: '30% 級距：建議改採單一 28% 分開計稅（無抵減），加計健保 2.11%，實質稅費耗損高達 30.11%。',
       0.40: '40% 級距：建議改採單一 28% 分開計稅（無抵減），加計健保 2.11%，實質稅費耗損高達 30.11%。'
     };
@@ -313,8 +350,10 @@
       let taxInc = 0;
       if (rate <= 0.20) {
         const credit = Math.min(80000, dividend * 0.085);
-        taxInc = Math.max(0, (dividend * rate) - credit);
+        // 邊際所得稅（扣除抵減後若小於 0 呈現實質退稅增益）
+        taxInc = (dividend * rate) - credit;
       } else {
+        // 30% / 40% 分開計稅 28%
         taxInc = dividend * 0.28;
       }
       const nhi = dividend >= 20000 ? Math.round(dividend * 0.0211) : 0;
@@ -339,22 +378,35 @@
       const frictionRate = dividend > 0 ? (f100.total / dividend) * 100 : 0;
       const nominalYield = (dividend / capital) * 100;
       const actualYield = (pocket100 / capital) * 100;
-      const tenYearLoss = f100.total * 10;
+      const tenYearLoss = Math.max(0, f100.total * 10);
 
       // 更新痛點卡片
-      document.getElementById('cardYearFriction').innerText = 'NT$ ' + f100.total.toLocaleString();
-      document.getElementById('cardFrictionRate').innerText = frictionRate.toFixed(2) + '%';
+      if (f100.total >= 0) {
+        document.getElementById('cardYearFriction').innerText = 'NT$ ' + f100.total.toLocaleString();
+        document.getElementById('cardYearFriction').className = 'text-xl font-bold text-[#B34024] mt-1 font-serif-title';
+        document.getElementById('cardFrictionRate').innerText = frictionRate.toFixed(2) + '%';
+      } else {
+        document.getElementById('cardYearFriction').innerText = '退稅 NT$ ' + Math.abs(f100.total).toLocaleString();
+        document.getElementById('cardYearFriction').className = 'text-xl font-bold text-[#4B7354] mt-1 font-serif-title';
+        document.getElementById('cardFrictionRate').innerText = '-' + Math.abs(frictionRate).toFixed(2) + '%';
+      }
+
       document.getElementById('cardNominalYield').innerText = nominalYield.toFixed(2) + '%';
       document.getElementById('cardActualYield').innerText = actualYield.toFixed(2) + '%';
       document.getElementById('card10YLoss').innerText = 'NT$ ' + tenYearLoss.toLocaleString();
 
-      document.getElementById('rowTaxInc').innerText = 'NT$ ' + f100.tax.toLocaleString();
+      if (f100.tax >= 0) {
+        document.getElementById('rowTaxInc').innerText = 'NT$ ' + f100.tax.toLocaleString();
+      } else {
+        document.getElementById('rowTaxInc').innerText = '享抵減退稅 NT$ ' + Math.abs(f100.tax).toLocaleString();
+      }
+
       document.getElementById('rowNhi').innerText = f100.nhi > 0 ? 'NT$ ' + f100.nhi.toLocaleString() : 'NT$ 0 (未達2萬免扣)';
       document.getElementById('rowPocket').innerText = 'NT$ ' + pocket100.toLocaleString() + ' / 年';
 
       // 方案 A 欄位
       document.getElementById('colANominal').innerText = 'NT$ ' + dividend.toLocaleString();
-      document.getElementById('colAFriction').innerText = '- NT$ ' + f100.total.toLocaleString();
+      document.getElementById('colAFriction').innerText = (f100.total >= 0 ? '- ' : '+ 退稅 ') + 'NT$ ' + Math.abs(f100.total).toLocaleString();
       document.getElementById('colAActual').innerText = 'NT$ ' + pocket100.toLocaleString();
 
       // 2. 方案 B 分流境外試算
@@ -367,10 +419,10 @@
       const fDomestic = calcFriction(domesticDiv, currentRate);
       const totalFrictionB = fDomestic.total;
       const pocketB = dividend - totalFrictionB;
-      const annualSaving = f100.total - totalFrictionB;
+      const annualSaving = Math.max(0, f100.total - totalFrictionB);
 
       document.getElementById('colBNominal').innerText = 'NT$ ' + dividend.toLocaleString();
-      document.getElementById('colBFriction').innerText = '- NT$ ' + totalFrictionB.toLocaleString();
+      document.getElementById('colBFriction').innerText = (totalFrictionB >= 0 ? '- ' : '+ 退稅 ') + 'NT$ ' + Math.abs(totalFrictionB).toLocaleString();
       document.getElementById('colBActual').innerText = 'NT$ ' + pocketB.toLocaleString();
 
       document.getElementById('savingPerYear').innerText = '+ NT$ ' + annualSaving.toLocaleString() + ' / 年';
@@ -378,7 +430,7 @@
       // 海外所得門檻提示
       const offshoreStatusEl = document.getElementById('offshoreStatus');
       if (offshoreDiv < 1000000) {
-        offshoreStatusEl.innerText = `海外息收 ${Math.round(offshoreDiv/10000)}萬：未達 100 萬免申報門檻（免稅、免健保）`;
+        offshoreStatusEl.innerText = `海外息收 ${Math.round(offshoreDiv/10000)}萬：未達 100 萬免申報門檻（免稅）`;
         offshoreStatusEl.className = 'text-xs font-semibold text-[#4B7354] mt-1';
       } else {
         offshoreStatusEl.innerText = `海外息收 ${Math.round(offshoreDiv/10000)}萬：達 100 萬需計入基本所得額（享750萬免稅額度）`;
