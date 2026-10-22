@@ -214,7 +214,25 @@
           <span>100% (全額分流)</span>
         </div>
       </div>
-
+      <!-- 境外標的配息率自訂 -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-[#FAF8F5] p-3.5 rounded-xl border border-[#EDE7DD]">
+        <div class="space-y-0.5">
+          <label class="text-xs font-semibold text-[#5C4D41]">
+            境外標的預估年化配息率 (%)
+          </label>
+          <p class="text-[11px] text-[#8C8075]">依規劃之境外基金、美元債券或資產憑證殖利率設定</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="number" id="offshoreYieldRate" value="5.5" step="0.1" min="0" max="20" oninput="recalc()"
+            class="w-24 px-3 py-1.5 bg-white border border-[#D9D0C3] rounded-lg text-sm font-bold text-[#4B7354] text-center focus:outline-none focus:ring-2 focus:ring-[#8E735B]">
+          <span class="text-xs font-semibold text-[#5C4D41]">%</span>
+          <div class="flex gap-1 pl-1">
+            <button type="button" onclick="setOffshoreYield(5.0)" class="text-[10px] px-1.5 py-1 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">5%</button>
+            <button type="button" onclick="setOffshoreYield(5.5)" class="text-[10px] px-1.5 py-1 rounded bg-[#8E735B] text-white font-medium">5.5%</button>
+            <button type="button" onclick="setOffshoreYield(6.0)" class="text-[10px] px-1.5 py-1 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">6%</button>
+          </div>
+        </div>
+      </div>
       <!-- 對比方案 A vs. B -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <!-- 方案 A -->
@@ -368,13 +386,16 @@
       recalc();
     }
 
-    // 處理滑桿與按鈕改變
+    function setOffshoreYield(rate) {
+      document.getElementById('offshoreYieldRate').value = rate;
+      recalc();
+    }
+
     function handleRatioChange(val) {
       const intVal = parseInt(val, 10);
       document.getElementById('ratioSlider').value = intVal;
       document.getElementById('ratioText').innerText = intVal + '%';
 
-      // 更新快捷按鈕顏色
       document.querySelectorAll('.ratio-btn').forEach(btn => {
         if (btn.innerText.startsWith(intVal + '%')) {
           btn.className = 'ratio-btn px-1.5 py-0.5 rounded bg-[#8E735B] text-white font-medium';
@@ -405,14 +426,13 @@
 
     function recalc() {
       const totalPayout = Math.max(0, parseFloat(document.getElementById('inputDividend').value) || 0);
-      
-      // 直接從滑桿元素讀取當前數值，確保絕對同步
       const ratioEl = document.getElementById('ratioSlider');
       const ratioVal = ratioEl ? parseInt(ratioEl.value, 10) : 50;
       const dividend = totalPayout * (ratioVal / 100);
 
       const capital = Math.max(1000, parseFloat(document.getElementById('inputCapital').value) || 1000);
       const offshorePct = parseInt(document.getElementById('offshoreSlider').value, 10);
+      const offshoreYield = Math.max(0, parseFloat(document.getElementById('offshoreYieldRate')?.value) || 5.5) / 100;
 
       // 更新 54C 應稅字樣
       const taxableNote = document.getElementById('taxableDivNote');
@@ -453,33 +473,49 @@
       document.getElementById('rowNhi').innerText = f100.nhi > 0 ? 'NT$ ' + f100.nhi.toLocaleString() : 'NT$ 0 (未達2萬免扣)';
       document.getElementById('rowPocket').innerText = 'NT$ ' + pocket100.toLocaleString() + ' / 年';
 
-      // 方案 A
+      // 方案 A 欄位
       document.getElementById('colANominal').innerText = 'NT$ ' + totalPayout.toLocaleString();
       document.getElementById('colAFriction').innerText = (f100.total >= 0 ? '- ' : '+ 退稅 ') + 'NT$ ' + Math.abs(f100.total).toLocaleString();
       document.getElementById('colAActual').innerText = 'NT$ ' + pocket100.toLocaleString();
 
-      // 2. 方案 B 境外分流
+      // 2. 方案 B 境外分流試算
       const domesticShare = (100 - offshorePct) / 100;
       const offshoreShare = offshorePct / 100;
 
-      const domesticDiv = dividend * domesticShare;
-      const offshorePayout = totalPayout * offshoreShare;
+      // 境內保留部分
+      const remainingDomesticTotal = totalPayout * domesticShare;
+      const remainingDomestic54C = dividend * domesticShare;
+      const fDomestic = calcFriction(remainingDomestic54C, currentRate);
+      const remainingDomesticPocket = remainingDomesticTotal - fDomestic.total;
 
-      const fDomestic = calcFriction(domesticDiv, currentRate);
-      const totalFrictionB = fDomestic.total;
-      const pocketB = totalPayout - totalFrictionB;
-      const annualSaving = Math.max(0, f100.total - totalFrictionB);
+      // 境外配置部分：依自訂年化配息率計算實領息收（本金 × 分流比例 × 境外配息率）
+      const offshoreCapital = capital * offshoreShare;
+      const offshorePayout = offshoreCapital * offshoreYield;
 
-      document.getElementById('colBNominal').innerText = 'NT$ ' + totalPayout.toLocaleString();
+      // 方案 B 合計
+      const combinedNominalB = Math.round(remainingDomesticTotal + offshorePayout);
+      const totalFrictionB = fDomestic.total; // 境外免稅免健保
+      const totalPocketB = Math.round(remainingDomesticPocket + offshorePayout);
+      const annualDifference = totalPocketB - pocket100;
+
+      document.getElementById('colBNominal').innerText = 'NT$ ' + combinedNominalB.toLocaleString();
       document.getElementById('colBFriction').innerText = (totalFrictionB >= 0 ? '- ' : '+ 退稅 ') + 'NT$ ' + Math.abs(totalFrictionB).toLocaleString();
-      document.getElementById('colBActual').innerText = 'NT$ ' + pocketB.toLocaleString();
+      document.getElementById('colBActual').innerText = 'NT$ ' + totalPocketB.toLocaleString();
 
-      document.getElementById('savingPerYear').innerText = '+ NT$ ' + annualSaving.toLocaleString() + ' / 年';
+      // 年現金流差額呈現（正為多賺，負為微降）
+      const diffEl = document.getElementById('savingPerYear');
+      if (annualDifference >= 0) {
+        diffEl.innerText = '+ NT$ ' + annualDifference.toLocaleString() + ' / 年';
+        diffEl.className = 'text-2xl font-bold text-[#4B7354] font-serif-title mt-0.5';
+      } else {
+        diffEl.innerText = '- NT$ ' + Math.abs(annualDifference).toLocaleString() + ' / 年';
+        diffEl.className = 'text-2xl font-bold text-[#B34024] font-serif-title mt-0.5';
+      }
 
       // 海外所得門檻
       const offshoreStatusEl = document.getElementById('offshoreStatus');
       if (offshorePayout < 1000000) {
-        offshoreStatusEl.innerText = `海外息收 ${Math.round(offshorePayout/10000)}萬：未達 100 萬免申報門檻（免稅）`;
+        offshoreStatusEl.innerText = `海外息收 ${Math.round(offshorePayout/10000)}萬：未達 100 萬免申報門檻（免稅、免健保）`;
         offshoreStatusEl.className = 'text-xs font-semibold text-[#4B7354] mt-1';
       } else {
         offshoreStatusEl.innerText = `海外息收 ${Math.round(offshorePayout/10000)}萬：達 100 萬需計入基本所得額（享750萬免稅額度）`;
@@ -488,11 +524,11 @@
 
       // 3. 5% 年化複利
       const r = 0.05;
-      const fv10 = annualSaving > 0 ? Math.round(annualSaving * ((Math.pow(1 + r, 10) - 1) / r)) : 0;
-      const fv20 = annualSaving > 0 ? Math.round(annualSaving * ((Math.pow(1 + r, 20) - 1) / r)) : 0;
+      const fv10 = annualDifference > 0 ? Math.round(annualDifference * ((Math.pow(1 + r, 10) - 1) / r)) : 0;
+      const fv20 = annualDifference > 0 ? Math.round(annualDifference * ((Math.pow(1 + r, 20) - 1) / r)) : 0;
 
-      document.getElementById('compound10Y').innerText = '+ NT$ ' + fv10.toLocaleString();
-      document.getElementById('compound20Y').innerText = '+ NT$ ' + fv20.toLocaleString();
+      document.getElementById('compound10Y').innerText = (annualDifference > 0 ? '+ ' : '') + 'NT$ ' + fv10.toLocaleString();
+      document.getElementById('compound20Y').innerText = (annualDifference > 0 ? '+ ' : '') + 'NT$ ' + fv20.toLocaleString();
     }
 
     // 監聽資本市值與境外滑桿
