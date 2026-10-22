@@ -100,18 +100,18 @@
               <span id="ratioText" class="font-bold text-[#8E735B]">50%</span>
             </div>
             <input type="range" id="ratioSlider" min="10" max="100" value="50" step="5"
+              oninput="setRatio(this.value)"
               class="w-full h-1.5 bg-[#DED6CA] rounded-lg appearance-none cursor-pointer">
             <div class="flex justify-between items-center text-[10px]">
-              <div class="flex gap-1">
-                <button type="button" onclick="setRatio(35)" class="px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">35%(多頭)</button>
-                <button type="button" onclick="setRatio(50)" class="px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">50%(均值)</button>
-                <button type="button" onclick="setRatio(75)" class="px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">75%(旺季)</button>
-                <button type="button" onclick="setRatio(100)" class="px-1.5 py-0.5 rounded bg-[#8E735B] text-white font-medium">100%(個股)</button>
+              <div class="flex gap-1" id="ratioQuickBtns">
+                <button type="button" onclick="setRatio(35)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">35%(多頭)</button>
+                <button type="button" onclick="setRatio(50)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#8E735B] text-white font-medium">50%(均值)</button>
+                <button type="button" onclick="setRatio(75)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">75%(旺季)</button>
+                <button type="button" onclick="setRatio(100)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">100%(個股)</button>
               </div>
               <span id="taxableDivNote" class="text-[#8C8075] font-medium">應稅 54C：NT$ 150,000</span>
             </div>
           </div>
-        </div>
 
         <!-- 3. 配息標的總市值 -->
         <div class="space-y-2">
@@ -528,11 +528,24 @@
     }
 
     function setRatio(val) {
-      sourceRatio = val / 100;
+      const intVal = parseInt(val, 10);
+      sourceRatio = intVal / 100;
+
       const slider = document.getElementById('ratioSlider');
-      if (slider) slider.value = val;
+      if (slider) slider.value = intVal;
+
       const text = document.getElementById('ratioText');
-      if (text) text.innerText = val + '%';
+      if (text) text.innerText = intVal + '%';
+
+      // 更新快捷按鈕樣式
+      document.querySelectorAll('.ratio-btn').forEach(btn => {
+        if (btn.innerText.startsWith(intVal + '%')) {
+          btn.className = 'ratio-btn px-1.5 py-0.5 rounded bg-[#8E735B] text-white font-medium';
+        } else {
+          btn.className = 'ratio-btn px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]';
+        }
+      });
+
       recalc();
     }
 
