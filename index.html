@@ -83,7 +83,7 @@
           <label class="block text-xs font-semibold text-[#665D55]">
             2. 目前每年領取配息總額 (NT$)
           </label>
-          <input type="number" id="inputDividend" value="300000" step="50000" 
+          <input type="number" id="inputDividend" value="300000" step="50000" oninput="recalc()"
             class="w-full px-3.5 py-2.5 bg-[#FAF8F5] border border-[#D9D0C3] rounded-xl text-base font-medium focus:outline-none focus:ring-2 focus:ring-[#8E735B]">
           
           <div class="flex gap-1.5 pt-1">
@@ -100,18 +100,19 @@
               <span id="ratioText" class="font-bold text-[#8E735B]">50%</span>
             </div>
             <input type="range" id="ratioSlider" min="10" max="100" value="50" step="5"
-              oninput="setRatio(this.value)"
+              oninput="handleRatioChange(this.value)"
               class="w-full h-1.5 bg-[#DED6CA] rounded-lg appearance-none cursor-pointer">
             <div class="flex justify-between items-center text-[10px]">
-              <div class="flex gap-1" id="ratioQuickBtns">
-                <button type="button" onclick="setRatio(35)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">35%(多頭)</button>
-                <button type="button" onclick="setRatio(50)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#8E735B] text-white font-medium">50%(均值)</button>
-                <button type="button" onclick="setRatio(75)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">75%(旺季)</button>
-                <button type="button" onclick="setRatio(100)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">100%(個股)</button>
+              <div class="flex gap-1">
+                <button type="button" onclick="handleRatioChange(35)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">35%(多頭)</button>
+                <button type="button" onclick="handleRatioChange(50)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#8E735B] text-white font-medium">50%(均值)</button>
+                <button type="button" onclick="handleRatioChange(75)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">75%(旺季)</button>
+                <button type="button" onclick="handleRatioChange(100)" class="ratio-btn px-1.5 py-0.5 rounded bg-[#F0EBE1] text-[#6B5F54] hover:bg-[#E5DCD0]">100%(個股)</button>
               </div>
               <span id="taxableDivNote" class="text-[#8C8075] font-medium">應稅 54C：NT$ 150,000</span>
             </div>
           </div>
+        </div>
 
         <!-- 3. 配息標的總市值 -->
         <div class="space-y-2">
@@ -334,166 +335,6 @@
 
   <script>
     let currentRate = 0.20;
-    let sourceRatio = 1.0; // 預設個股 100% 為 54C
-
-    function setSourceType(type) {
-      if (type === 'stock') {
-        sourceRatio = 1.0;
-        document.getElementById('btnStock').className = 'text-[10px] px-2 py-0.5 rounded bg-[#8E735B] text-white font-medium transition';
-        document.getElementById('btnEtf').className = 'text-[10px] px-2 py-0.5 rounded text-[#6B5F54] hover:bg-[#EFE9DF] transition';
-      } else {
-        sourceRatio = 0.5; // ETF 預估 50% 為 54C，其餘為平準金/資本利得免稅
-        document.getElementById('btnStock').className = 'text-[10px] px-2 py-0.5 rounded text-[#6B5F54] hover:bg-[#EFE9DF] transition';
-        document.getElementById('btnEtf').className = 'text-[10px] px-2 py-0.5 rounded bg-[#8E735B] text-white font-medium transition';
-      }
-      recalc();
-    }
-
-    const bracketInfo = {
-      0.05: '5% 級距：若為純配息所得享有 8.5% 退稅優勢；若加計本業收入，大額股利可能跨級推擠至 12%。',
-      0.12: '12% 級距：境內股利扣減 8.5% 後邊際稅率為 3.5%，加計健保 2.11%，實質摩擦率為 5.61%。',
-      0.20: '20% 級距：扣減 8.5% 後邊際稅率為 11.5%，加計健保 2.11%，每領 100 萬股利扣除約 13.6 萬。',
-      0.30: '30% 級距：建議改採單一 28% 分開計稅（無抵減），加計健保 2.11%，實質稅費耗損高達 30.11%。',
-      0.40: '40% 級距：建議改採單一 28% 分開計稅（無抵減），加計健保 2.11%，實質稅費耗損高達 30.11%。'
-    };
-
-    function setTaxRate(rate) {
-      currentRate = rate;
-      document.querySelectorAll('.rate-btn').forEach(btn => {
-        const val = parseFloat(btn.innerText) / 100;
-        if (Math.abs(val - rate) < 0.001) {
-          btn.className = 'rate-btn py-2 text-xs font-semibold rounded-lg border border-[#8E735B] bg-[#8E735B] text-white transition';
-        } else {
-          btn.className = 'rate-btn py-2 text-xs font-semibold rounded-lg border border-[#D9D0C3] bg-[#FAF8F5] text-[#383431] hover:bg-[#F3EFE9] transition';
-        }
-      });
-      document.getElementById('rateNotice').innerText = bracketInfo[rate];
-      recalc();
-    }
-
-    function setDiv(val) {
-      document.getElementById('inputDividend').value = val;
-      recalc();
-    }
-
-    function setCap(val) {
-      document.getElementById('inputCapital').value = val;
-      recalc();
-    }
-
-    function calcFriction(dividend, rate) {
-      if (dividend <= 0) return { tax: 0, nhi: 0, total: 0 };
-      let taxInc = 0;
-      if (rate <= 0.20) {
-        const credit = Math.min(80000, dividend * 0.085);
-        // 邊際所得稅（扣除抵減後若小於 0 呈現實質退稅增益）
-        taxInc = (dividend * rate) - credit;
-      } else {
-        // 30% / 40% 分開計稅 28%
-        taxInc = dividend * 0.28;
-      }
-      const nhi = dividend >= 20000 ? Math.round(dividend * 0.0211) : 0;
-      return {
-        tax: Math.round(taxInc),
-        nhi: nhi,
-        total: Math.round(taxInc + nhi)
-      };
-    }
-
-    function recalc() {
-      const totalPayout = Math.max(0, parseFloat(document.getElementById('inputDividend').value) || 0);
-      const dividend = totalPayout * sourceRatio; // 只有 54C 部分才計入摩擦
-      const capital = Math.max(1000, parseFloat(document.getElementById('inputCapital').value) || 1000);
-      const offshorePct = parseInt(document.getElementById('offshoreSlider').value, 10);
-
-      document.getElementById('taxableDivNote').innerText = '應稅 54C：NT$ ' + Math.round(dividend).toLocaleString();
-      document.getElementById('sliderPercentText').innerText = offshorePct + '%';
-      document.getElementById('badgeBOffshorePct').innerText = `境外佔 ${offshorePct}%`;
-
-      // 1. 現狀全額境內試算
-      const f100 = calcFriction(dividend, currentRate);
-      const pocket100 = dividend - f100.total;
-      const frictionRate = dividend > 0 ? (f100.total / dividend) * 100 : 0;
-      const nominalYield = (dividend / capital) * 100;
-      const actualYield = (pocket100 / capital) * 100;
-      const tenYearLoss = Math.max(0, f100.total * 10);
-
-      // 更新痛點卡片
-      if (f100.total >= 0) {
-        document.getElementById('cardYearFriction').innerText = 'NT$ ' + f100.total.toLocaleString();
-        document.getElementById('cardYearFriction').className = 'text-xl font-bold text-[#B34024] mt-1 font-serif-title';
-        document.getElementById('cardFrictionRate').innerText = frictionRate.toFixed(2) + '%';
-      } else {
-        document.getElementById('cardYearFriction').innerText = '退稅 NT$ ' + Math.abs(f100.total).toLocaleString();
-        document.getElementById('cardYearFriction').className = 'text-xl font-bold text-[#4B7354] mt-1 font-serif-title';
-        document.getElementById('cardFrictionRate').innerText = '-' + Math.abs(frictionRate).toFixed(2) + '%';
-      }
-
-      document.getElementById('cardNominalYield').innerText = nominalYield.toFixed(2) + '%';
-      document.getElementById('cardActualYield').innerText = actualYield.toFixed(2) + '%';
-      document.getElementById('card10YLoss').innerText = 'NT$ ' + tenYearLoss.toLocaleString();
-
-      if (f100.tax >= 0) {
-        document.getElementById('rowTaxInc').innerText = 'NT$ ' + f100.tax.toLocaleString();
-      } else {
-        document.getElementById('rowTaxInc').innerText = '享抵減退稅 NT$ ' + Math.abs(f100.tax).toLocaleString();
-      }
-
-      document.getElementById('rowNhi').innerText = f100.nhi > 0 ? 'NT$ ' + f100.nhi.toLocaleString() : 'NT$ 0 (未達2萬免扣)';
-      document.getElementById('rowPocket').innerText = 'NT$ ' + pocket100.toLocaleString() + ' / 年';
-
-      // 方案 A 欄位
-      document.getElementById('colANominal').innerText = 'NT$ ' + dividend.toLocaleString();
-      document.getElementById('colAFriction').innerText = (f100.total >= 0 ? '- ' : '+ 退稅 ') + 'NT$ ' + Math.abs(f100.total).toLocaleString();
-      document.getElementById('colAActual').innerText = 'NT$ ' + pocket100.toLocaleString();
-
-      // 2. 方案 B 分流境外試算
-      const domesticShare = (100 - offshorePct) / 100;
-      const offshoreShare = offshorePct / 100;
-
-      const domesticDiv = dividend * domesticShare;
-      const offshoreDiv = dividend * offshoreShare;
-
-      const fDomestic = calcFriction(domesticDiv, currentRate);
-      const totalFrictionB = fDomestic.total;
-      const pocketB = dividend - totalFrictionB;
-      const annualSaving = Math.max(0, f100.total - totalFrictionB);
-
-      document.getElementById('colBNominal').innerText = 'NT$ ' + dividend.toLocaleString();
-      document.getElementById('colBFriction').innerText = (totalFrictionB >= 0 ? '- ' : '+ 退稅 ') + 'NT$ ' + Math.abs(totalFrictionB).toLocaleString();
-      document.getElementById('colBActual').innerText = 'NT$ ' + pocketB.toLocaleString();
-
-      document.getElementById('savingPerYear').innerText = '+ NT$ ' + annualSaving.toLocaleString() + ' / 年';
-
-      // 海外所得門檻提示
-      const offshoreStatusEl = document.getElementById('offshoreStatus');
-      if (offshoreDiv < 1000000) {
-        offshoreStatusEl.innerText = `海外息收 ${Math.round(offshoreDiv/10000)}萬：未達 100 萬免申報門檻（免稅）`;
-        offshoreStatusEl.className = 'text-xs font-semibold text-[#4B7354] mt-1';
-      } else {
-        offshoreStatusEl.innerText = `海外息收 ${Math.round(offshoreDiv/10000)}萬：達 100 萬需計入基本所得額（享750萬免稅額度）`;
-        offshoreStatusEl.className = 'text-xs font-semibold text-[#9C5A2B] mt-1';
-      }
-
-      // 3. 複利試算 (5% 年化)
-      const r = 0.05;
-      const fv10 = annualSaving > 0 ? Math.round(annualSaving * ((Math.pow(1 + r, 10) - 1) / r)) : 0;
-      const fv20 = annualSaving > 0 ? Math.round(annualSaving * ((Math.pow(1 + r, 20) - 1) / r)) : 0;
-
-      document.getElementById('compound10Y').innerText = '+ NT$ ' + fv10.toLocaleString();
-      document.getElementById('compound20Y').innerText = '+ NT$ ' + fv20.toLocaleString();
-    }
-
-    // 事件監聽
-    document.getElementById('inputDividend').addEventListener('input', recalc);
-    document.getElementById('inputCapital').addEventListener('input', recalc);
-    document.getElementById('offshoreSlider').addEventListener('input', recalc);
-
-    // 初始化執行
-    setTaxRate(0.20);
-  <script>
-    let currentRate = 0.20;
-    let sourceRatio = 0.50; // 預設 54C 占比 50%
 
     const bracketInfo = {
       0.05: '5% 級距：境內股利享 8.5% 抵減退稅優勢；若加計本業收入，大額股利可能跨級推擠至 12%。',
@@ -527,17 +368,13 @@
       recalc();
     }
 
-    function setRatio(val) {
+    // 處理滑桿與按鈕改變
+    function handleRatioChange(val) {
       const intVal = parseInt(val, 10);
-      sourceRatio = intVal / 100;
+      document.getElementById('ratioSlider').value = intVal;
+      document.getElementById('ratioText').innerText = intVal + '%';
 
-      const slider = document.getElementById('ratioSlider');
-      if (slider) slider.value = intVal;
-
-      const text = document.getElementById('ratioText');
-      if (text) text.innerText = intVal + '%';
-
-      // 更新快捷按鈕樣式
+      // 更新快捷按鈕顏色
       document.querySelectorAll('.ratio-btn').forEach(btn => {
         if (btn.innerText.startsWith(intVal + '%')) {
           btn.className = 'ratio-btn px-1.5 py-0.5 rounded bg-[#8E735B] text-white font-medium';
@@ -568,11 +405,16 @@
 
     function recalc() {
       const totalPayout = Math.max(0, parseFloat(document.getElementById('inputDividend').value) || 0);
-      const dividend = totalPayout * sourceRatio; // 只有 54C 部分才計入摩擦
+      
+      // 直接從滑桿元素讀取當前數值，確保絕對同步
+      const ratioEl = document.getElementById('ratioSlider');
+      const ratioVal = ratioEl ? parseInt(ratioEl.value, 10) : 50;
+      const dividend = totalPayout * (ratioVal / 100);
+
       const capital = Math.max(1000, parseFloat(document.getElementById('inputCapital').value) || 1000);
       const offshorePct = parseInt(document.getElementById('offshoreSlider').value, 10);
 
-      // 畫面文字更新
+      // 更新 54C 應稅字樣
       const taxableNote = document.getElementById('taxableDivNote');
       if (taxableNote) taxableNote.innerText = '應稅 54C：NT$ ' + Math.round(dividend).toLocaleString();
 
@@ -587,7 +429,7 @@
       const actualYield = (pocket100 / capital) * 100;
       const tenYearLoss = Math.max(0, f100.total * 10);
 
-      // 更新痛點卡片
+      // 痛點卡片
       if (f100.total >= 0) {
         document.getElementById('cardYearFriction').innerText = 'NT$ ' + f100.total.toLocaleString();
         document.getElementById('cardYearFriction').className = 'text-xl font-bold text-[#B34024] mt-1 font-serif-title';
@@ -611,12 +453,12 @@
       document.getElementById('rowNhi').innerText = f100.nhi > 0 ? 'NT$ ' + f100.nhi.toLocaleString() : 'NT$ 0 (未達2萬免扣)';
       document.getElementById('rowPocket').innerText = 'NT$ ' + pocket100.toLocaleString() + ' / 年';
 
-      // 方案 A 欄位
+      // 方案 A
       document.getElementById('colANominal').innerText = 'NT$ ' + totalPayout.toLocaleString();
       document.getElementById('colAFriction').innerText = (f100.total >= 0 ? '- ' : '+ 退稅 ') + 'NT$ ' + Math.abs(f100.total).toLocaleString();
       document.getElementById('colAActual').innerText = 'NT$ ' + pocket100.toLocaleString();
 
-      // 2. 方案 B 分流境外試算
+      // 2. 方案 B 境外分流
       const domesticShare = (100 - offshorePct) / 100;
       const offshoreShare = offshorePct / 100;
 
@@ -634,7 +476,7 @@
 
       document.getElementById('savingPerYear').innerText = '+ NT$ ' + annualSaving.toLocaleString() + ' / 年';
 
-      // 海外所得門檻提示
+      // 海外所得門檻
       const offshoreStatusEl = document.getElementById('offshoreStatus');
       if (offshorePayout < 1000000) {
         offshoreStatusEl.innerText = `海外息收 ${Math.round(offshorePayout/10000)}萬：未達 100 萬免申報門檻（免稅）`;
@@ -644,7 +486,7 @@
         offshoreStatusEl.className = 'text-xs font-semibold text-[#9C5A2B] mt-1';
       }
 
-      // 3. 複利試算 (5% 年化)
+      // 3. 5% 年化複利
       const r = 0.05;
       const fv10 = annualSaving > 0 ? Math.round(annualSaving * ((Math.pow(1 + r, 10) - 1) / r)) : 0;
       const fv20 = annualSaving > 0 ? Math.round(annualSaving * ((Math.pow(1 + r, 20) - 1) / r)) : 0;
@@ -653,19 +495,11 @@
       document.getElementById('compound20Y').innerText = '+ NT$ ' + fv20.toLocaleString();
     }
 
-    // 事件監聽
-    document.getElementById('inputDividend').addEventListener('input', recalc);
+    // 監聽資本市值與境外滑桿
     document.getElementById('inputCapital').addEventListener('input', recalc);
     document.getElementById('offshoreSlider').addEventListener('input', recalc);
 
-    const ratioSlider = document.getElementById('ratioSlider');
-    if (ratioSlider) {
-      ratioSlider.addEventListener('input', function(e) {
-        setRatio(parseInt(e.target.value, 10));
-      });
-    }
-
-    // 初始化執行
+    // 啟動初始化
     setTaxRate(0.20);
   </script>
 </body>
