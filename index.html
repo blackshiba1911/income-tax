@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高息資產隱形稅費體檢與境外配置策略系統</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tea: {
+              50: '#FBF9F5',
+              100: '#F5EFEB',
+              200: '#EAE1D5',
+              300: '#D9CEBF',
+              400: '#B39D82',
+              500: '#8C7355',
+              600: '#6E583F',
+              700: '#52412D',
+              800: '#3A2E20',
+              900: '#231B12',
+            },
+            sage: {
+              50: '#F4F7F4',
+              100: '#EDF3EC',
+              200: '#D7E5D5',
+              500: '#4A7C59',
+              600: '#3A6346',
+              700: '#2C4C35',
+            },
+            terracotta: {
+              50: '#FDF5F2',
+              100: '#FDF2E9',
+              200: '#F9DCD5',
+              500: '#C25943',
+              600: '#A64632',
+              700: '#8A3523',
+            }
+          },
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'sans-serif'],
+            serif: ['"Shippori Mincho"', '"Noto Sans TC"', 'serif'],
+          },
+          boxShadow: {
+            'card': '0 4px 20px -2px rgba(110, 88, 63, 0.06), 0 2px 6px -1px rgba(110, 88, 63, 0.03)',
+            'hover': '0 12px 30px -4px rgba(110, 88, 63, 0.12), 0 4px 12px -2px rgba(110, 88, 63, 0.06)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+    .slider-tea {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 9999px;
+      background: #D9CEBF;
+      outline: none;
+    }
+    .slider-tea::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #4A7C59;
+      cursor: pointer;
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+      transition: transform 0.15s ease;
+    }
+    .slider-tea::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+  </style>
+</head>
+
+<body class="bg-tea-50 text-tea-900 font-sans antialiased min-h-screen flex flex-col selection:bg-tea-200">
+
+  <!-- Header -->
+  <header class="border-b border-tea-200 bg-tea-50/90 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div class="flex items-center space-x-3.5">
+        <div class="w-10 h-10 rounded-2xl bg-tea-700 text-white flex items-center justify-center text-lg shadow-sm">
+          <i class="fa-solid fa-scale-balanced"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-tea-500">Asset & Tax Diagnostics</span>
+            <span class="text-[10px] bg-tea-100 text-tea-700 px-2 py-0.5 rounded-full border border-tea-200">2026 最新綜所稅及健保規範</span>
+          </div>
+          <h1 class="text-lg sm:text-xl font-serif font-bold text-tea-900 tracking-tight">
+            高息資產隱形稅費體檢與境外配置策略
+          </h1>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2 self-end sm:self-auto">
+        <button id="btn-copy-report" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white hover:bg-tea-100 text-tea-700 border border-tea-300 shadow-sm transition active:scale-95">
+          <i class="fa-solid fa-clipboard text-tea-500"></i>
+          <span>複製診斷報告</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-tea-800 text-white px-4 py-2.5 rounded-xl shadow-xl flex items-center space-x-2 text-xs sm:text-sm">
+    <i class="fa-solid fa-circle-check text-sage-500"></i>
+    <span id="toast-text">已成功複製體檢報告</span>
+  </div>
+
+  <!-- Subtitle Bar -->
+  <div class="bg-tea-100/70 border-b border-tea-200 py-2.5 px-4 text-center text-xs text-tea-600">
+    <span class="font-medium">揭露境內配息的實質稅費摩擦，看清您的落袋殖利率被吃掉了多少。</span>
+  </div>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full flex-grow space-y-8">
+
+    <!-- STEP 1: 秒級體檢輸入區 -->
+    <section class="bg-white rounded-3xl p-6 sm:p-8 border border-tea-200 shadow-card space-y-6">
+      <div class="flex items-center justify-between border-b border-tea-100 pb-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 rounded-xl bg-tea-100 text-tea-700 flex items-center justify-center text-xs font-serif font-bold">01</div>
+          <div>
+            <h2 class="text-base sm:text-lg font-serif font-bold text-tea-900">秒級速查：只需輸入 3 個數字</h2>
+            <p class="text-xs text-tea-400">無需提供整份稅單與所得細節，30 秒即可精準推算摩擦率</p>
+          </div>
+        </div>
+        <span class="text-xs text-tea-500 bg-tea-50 px-2.5 py-1 rounded-full border border-tea-200 hidden sm:inline-block">即時連動</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- 欄位 A: 邊際稅率 -->
+        <div class="space-y-3 p-4 rounded-2xl bg-tea-50/60 border border-tea-200/80">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-tea-800 flex items-center space-x-1.5">
+              <span>綜合所得稅邊際稅率</span>
+              <i class="fa-regular fa-circle-question text-tea-400 text-[11px]" title="依您去年扣除免稅與扣除額後，本業所得落入的最高級距"></i>
+            </label>
+            <span id="bracket-desc" class="text-[11px] font-semibold text-tea-600">20% 級距</span>
+          </div>
+
+          <div class="grid grid-cols-5 gap-1.5">
+            <button type="button" class="tax-rate-btn py-2 text-xs rounded-xl border border-tea-300 bg-white font-medium hover:bg-tea-100 transition" data-rate="0.05">5%</button>
+            <button type="button" class="tax-rate-btn py-2 text-xs rounded-xl border border-tea-300 bg-white font-medium hover:bg-tea-100 transition" data-rate="0.12">12%</button>
+            <button type="button" class="tax-rate-btn active-rate py-2 text-xs rounded-xl border-2 border-tea-700 bg-tea-700 text-white font-bold shadow-xs transition" data-rate="0.20">20%</button>
+            <button type="button" class="tax-rate-btn py-2 text-xs rounded-xl border border-tea-300 bg-white font-medium hover:bg-tea-100 transition" data-rate="0.30">30%</button>
+            <button type="button" class="tax-rate-btn py-2 text-xs rounded-xl border border-tea-300 bg-white font-medium hover:bg-tea-100 transition" data-rate="0.40">40%</button>
+          </div>
+          <p class="text-[11px] text-tea-500">※ 30% / 40% 級距將自動切換為 28% 分開計稅保護機制。</p>
+        </div>
+
+        <!-- 欄位 B: 境內年領現金股息 -->
+        <div class="space-y-3 p-4 rounded-2xl bg-tea-50/60 border border-tea-200/80">
+          <label class="text-xs font-bold text-tea-800 block">
+            台股/高息 ETF 每年領取現金股息 (54C)
+          </label>
+          <div class="relative rounded-xl border border-tea-300 focus-within:border-tea-500 focus-within:ring-1 focus-within:ring-tea-500 bg-white transition">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-tea-400 text-xs">NT$</span>
+            <input type="number" id="inp-dividend" value="300000" step="50000" min="0" 
+                   class="w-full pl-11 pr-4 py-2.5 bg-transparent text-sm text-tea-900 focus:outline-none font-semibold">
+          </div>
+          <div class="flex items-center space-x-1.5 pt-1">
+            <button type="button" class="btn-quick-div text-[11px] px-2 py-0.5 rounded-lg border border-tea-200 bg-white hover:bg-tea-100 text-tea-700 transition" data-val="100000">10萬</button>
+            <button type="button" class="btn-quick-div text-[11px] px-2 py-0.5 rounded-lg border border-tea-200 bg-white hover:bg-tea-100 text-tea-700 transition" data-val="300000">30萬</button>
+            <button type="button" class="btn-quick-div text-[11px] px-2 py-0.5 rounded-lg border border-tea-200 bg-white hover:bg-tea-100 text-tea-700 transition" data-val="500000">50萬</button>
+            <button type="button" class="btn-quick-div text-[11px] px-2 py-0.5 rounded-lg border border-tea-200 bg-white hover:bg-tea-100 text-tea-700 transition" data-val="1000000">100萬</button>
+          </div>
+        </div>
+
+        <!-- 欄位 C: 投入本金市值 -->
+        <div class="space-y-3 p-4 rounded-2xl bg-tea-50/60 border border-tea-200/80">
+          <label class="text-xs font-bold text-tea-800 block">
+            投入配息標的總資產市值
+          </label>
+          <div class="relative rounded-xl border border-tea-300 focus-within:border-tea-500 focus-within:ring-1 focus-within:ring-tea-500 bg-white transition">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-tea-400 text-xs">NT$</span>
+            <input type="number" id="inp-portfolio" value="5000000" step="500000" min="10000" 
+                   class="w-full pl-11 pr-4 py-2.5 bg-transparent text-sm text-tea-900 focus:outline-none font-semibold">
+          </div>
+          <div class="flex items-center space-x-1.5 pt-1">
+            <button type="button" class="btn-quick-port text-[11px] px-2 py-0.5 rounded-lg border border-tea-200 bg-white hover:bg-tea-100 text-tea-700 transition" data-val="2000000">200萬</button>
+            <button type="button" class="btn-quick-port text-[11px] px-2 py-0.5 rounded-lg border border-tea-200 bg-white hover:bg-tea-100 text-tea-700 transition" data-val="5000000">500萬</button>
+            <button type="button" class="btn-quick-port text-[11px] px-2 py-0.5 rounded-lg border border-tea-200 bg-white hover:bg-tea-100 text-tea-700 transition" data-val="10000000">1,000萬</button>
+            <button type="button" class="btn-quick-port text-[11px] px-2 py-0.5 rounded-lg border border-tea-200 bg-white hover:bg-tea-100 text-tea-700 transition" data-val="20000000">2,000萬</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- STEP 2: 震撼痛點對比卡片 (即時計算) -->
+    <section class="space-y-6">
+      
+      <!-- 總覽警告橫幅 -->
+      <div class="bg-terracotta-50 border-2 border-terracotta-200 rounded-3xl p-6 sm:p-7 shadow-card transition-all">
+        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <div class="space-y-2 max-w-xl">
+            <div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-terracotta-100 text-terracotta-700 text-xs font-semibold">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span>隱形稅費耗損警示</span>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-serif font-bold text-terracotta-700">
+              您的配息收益，每年正被扣除 <span id="txt-annual-friction" class="text-2xl sm:text-3xl text-terracotta-600 font-sans">NT$ 40,830</span>
+            </h3>
+            <p id="txt-friction-summary" class="text-xs sm:text-sm text-tea-700 leading-relaxed">
+              以 20% 稅率計算，每領 100 元股息，實質稅費摩擦率高達 13.61%，落袋殖利率直接縮水。
+            </p>
+          </div>
+
+          <!-- 10 年國庫貢獻大字卡 -->
+          <div class="bg-white/90 backdrop-blur-xs p-5 rounded-2xl border border-terracotta-200 text-right w-full lg:w-auto min-w-[260px] shadow-sm">
+            <span class="text-xs text-tea-500 block font-medium">10 年累積無形貢獻給國庫</span>
+            <div id="txt-ten-year-friction" class="text-2xl sm:text-3xl font-serif font-bold text-terracotta-600 mt-1">
+              NT$ 408,300
+            </div>
+            <span class="text-[11px] text-tea-400 mt-0.5 block">相當於直接蒸發一輛國產小車首期款</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 核心指標：帳面 vs. 實質殖利率 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <!-- 帳面殖利率 -->
+        <div class="bg-white p-5 rounded-2xl border border-tea-200 shadow-card flex flex-col justify-between">
+          <span class="text-xs font-medium text-tea-500">標的帳面年化殖利率</span>
+          <div class="my-2">
+            <div id="card-nominal-yield" class="text-2xl sm:text-3xl font-bold font-serif text-tea-800">6.00%</div>
+            <p class="text-[11px] text-tea-400 mt-1">配息總額 ÷ 投資本金</p>
+          </div>
+          <div class="text-xs text-tea-600 font-medium pt-2 border-t border-tea-100">
+            名義年息：<span id="card-nominal-payout" class="text-tea-900 font-bold">NT$ 300,000</span>
+          </div>
+        </div>
+
+        <!-- 實質落袋殖利率 -->
+        <div class="bg-white p-5 rounded-2xl border-2 border-terracotta-200 shadow-card flex flex-col justify-between relative overflow-hidden">
+          <div class="absolute top-0 right-0 bg-terracotta-500 text-white text-[10px] px-2.5 py-0.5 rounded-bl-lg font-bold">
+            實質縮水
+          </div>
+          <span class="text-xs font-medium text-terracotta-600">真正落袋年化殖利率</span>
+          <div class="my-2">
+            <div id="card-actual-yield" class="text-2xl sm:text-3xl font-bold font-serif text-terracotta-600">5.18%</div>
+            <p class="text-[11px] text-terracotta-500 mt-1">扣除所得稅增額與健保費後</p>
+          </div>
+          <div class="text-xs text-terracotta-700 font-medium pt-2 border-t border-terracotta-100">
+            實得現金：<span id="card-actual-payout" class="text-terracotta-600 font-bold">NT$ 259,170</span>
+          </div>
+        </div>
+
+        <!-- 綜合所得稅增額 -->
+        <div class="bg-white p-5 rounded-2xl border border-tea-200 shadow-card flex flex-col justify-between">
+          <span class="text-xs font-medium text-tea-500">每年所得稅實質增額</span>
+          <div class="my-2">
+            <div id="card-tax-increase" class="text-2xl sm:text-3xl font-bold font-serif text-tea-800">NT$ 34,500</div>
+            <p id="card-tax-calc-detail" class="text-[11px] text-tea-400 mt-1">稅率 20% - 抵減 8.5%</p>
+          </div>
+          <div class="text-xs text-tea-600 pt-2 border-t border-tea-100 flex justify-between">
+            <span>抵減已享：</span>
+            <span id="card-credit-used" class="font-bold text-sage-600">NT$ 25,500</span>
+          </div>
+        </div>
+
+        <!-- 二代健保補充保費 -->
+        <div class="bg-white p-5 rounded-2xl border border-tea-200 shadow-card flex flex-col justify-between">
+          <span class="text-xs font-medium text-tea-500">二代健保補充保費 (2.11%)</span>
+          <div class="my-2">
+            <div id="card-nhi-fee" class="text-2xl sm:text-3xl font-bold font-serif text-tea-800">NT$ 6,330</div>
+            <p class="text-[11px] text-tea-400 mt-1">單次給付達 NT$ 20,000 即扣</p>
+          </div>
+          <div class="text-xs text-tea-600 pt-2 border-t border-tea-100 flex justify-between">
+            <span>實質耗損率：</span>
+            <span id="card-friction-percent" class="font-bold text-terracotta-600">13.61%</span>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- STEP 3: 境外資產配置解方 (滑桿模擬與優勢對比) -->
+    <section class="bg-white rounded-3xl p-6 sm:p-8 border border-tea-200 shadow-card space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-tea-100 pb-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 rounded-xl bg-sage-100 text-sage-700 flex items-center justify-center text-xs font-serif font-bold">02</div>
+          <div>
+            <h2 class="text-base sm:text-lg font-serif font-bold text-tea-900">境外資產配置解方：將資金移轉至零摩擦安全池</h2>
+            <p class="text-xs text-tea-400">利用境外資產合法三層防火牆，徹底拿回本該屬於您的現金流</p>
+          </div>
+        </div>
+        <span class="text-xs bg-sage-50 text-sage-700 border border-sage-200 px-3 py-1 rounded-full font-medium self-start sm:self-auto">
+          配置效益模擬
+        </span>
+      </div>
+
+      <!-- 滑桿調整區 -->
+      <div class="p-6 rounded-2xl bg-tea-50/70 border border-tea-200 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <label class="text-xs font-bold text-tea-900 block">
+              設定將配息標的移轉至「境外資產」的比例：
+            </label>
+            <p class="text-[11px] text-tea-500">拖動滑桿即時檢視省稅效益與現金流回補</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span id="txt-slider-percent" class="text-xl font-serif font-bold text-sage-600 bg-white px-3 py-1 rounded-xl border border-tea-200 shadow-xs">
+              50%
+            </span>
+            <span class="text-xs text-tea-500">轉入境外</span>
+          </div>
+        </div>
+
+        <input type="range" id="slider-offshore" min="0" max="100" step="5" value="50" class="slider-tea">
+
+        <div class="flex justify-between text-[11px] text-tea-400 px-1 font-medium">
+          <span>0% (全留境內)</span>
+          <span>25%</span>
+          <span>50% (均衡分流)</span>
+          <span>75%</span>
+          <span>100% (全數境外免稅池)</span>
+        </div>
+      </div>
+
+      <!-- 調整前後效益大對決 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+
+        <!-- 調整前 (境內現況) -->
+        <div class="p-6 rounded-2xl bg-tea-50/50 border border-tea-200 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex justify-between items-center pb-2.5 border-b border-tea-200">
+              <span class="text-xs font-bold text-tea-700 flex items-center space-x-2">
+                <i class="fa-solid fa-building text-tea-400"></i>
+                <span>方案 A：維持 100% 境內台股高配息</span>
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-terracotta-100 text-terracotta-600 font-semibold">摩擦最高</span>
+            </div>
+
+            <div class="space-y-2.5 text-xs text-tea-700 mt-4">
+              <div class="flex justify-between py-1 border-b border-tea-100">
+                <span class="text-tea-500">境內持倉市值</span>
+                <span id="plan-old-capital" class="font-medium text-tea-900">NT$ 5,000,000</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-tea-100">
+                <span class="text-tea-500">每年名義配息</span>
+                <span id="plan-old-gross" class="font-medium text-tea-900">NT$ 300,000</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-tea-100 text-terracotta-600">
+                <span>扣除所得稅增額</span>
+                <span id="plan-old-tax">- NT$ 34,500</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-tea-100 text-terracotta-600">
+                <span>扣除二代健保 (2.11%)</span>
+                <span id="plan-old-nhi">- NT$ 6,330</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-tea-200 flex justify-between items-baseline">
+            <span class="text-xs font-bold text-tea-700">每年實質落袋現金流</span>
+            <span id="plan-old-net" class="text-xl font-serif font-bold text-tea-900">NT$ 259,170</span>
+          </div>
+        </div>
+
+        <!-- 調整後 (境外新配置) -->
+        <div class="p-6 rounded-2xl bg-sage-50/70 border-2 border-sage-500/50 flex flex-col justify-between space-y-4 shadow-sm">
+          <div>
+            <div class="flex justify-between items-center pb-2.5 border-b border-sage-200">
+              <span class="text-xs font-bold text-sage-700 flex items-center space-x-2">
+                <i class="fa-solid fa-earth-americas text-sage-600"></i>
+                <span id="plan-new-title">方案 B：移轉 50% 至境外優質資產</span>
+              </span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-sage-200 text-sage-700 font-bold">推薦策略</span>
+            </div>
+
+            <div class="space-y-2.5 text-xs text-tea-700 mt-4">
+              <div class="flex justify-between py-1 border-b border-sage-200/50">
+                <span class="text-tea-500">境外配置部位 (免健保)</span>
+                <span id="plan-new-offshore-cap" class="font-medium text-sage-700">NT$ 2,500,000</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-sage-200/50">
+                <span class="text-tea-500">境外配息流 (零稅費摩擦)</span>
+                <span id="plan-new-offshore-div" class="font-medium text-sage-700">NT$ 150,000 (100%全拿)</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-sage-200/50">
+                <span class="text-tea-500">境內剩餘部分稅費</span>
+                <span id="plan-new-onshore-fric" class="font-medium text-terracotta-600">- NT$ 20,415</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-sage-200/50 text-sage-700 font-semibold bg-sage-100/70 px-2 rounded-lg">
+                <span>每年立即省下稅費 (淨增加現金)</span>
+                <span id="plan-new-annual-saved">+ NT$ 20,415</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-sage-200 flex justify-between items-baseline">
+            <div>
+              <span class="text-xs font-bold text-sage-800 block">每年實質落袋總現金流</span>
+              <span id="plan-new-yield-pct" class="text-[11px] text-sage-600 font-medium">實質殖利率回升至 5.59%</span>
+            </div>
+            <span id="plan-new-net-total" class="text-xl font-serif font-bold text-sage-700">NT$ 279,585</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 長期複利增益展示 -->
+      <div class="p-5 rounded-2xl bg-white border border-tea-200 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-chart-line text-sage-600"></i>
+            <span class="text-xs font-bold text-tea-900">省下的稅費複利滾存增益（假設年化報酬率 5% 再投資）</span>
+          </div>
+          <span class="text-[11px] text-tea-400">長期時間複利魔力</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
+          <div class="p-4 rounded-xl bg-tea-50 border border-tea-200">
+            <span class="text-xs text-tea-500 block">10 年累積多賺本金</span>
+            <div id="txt-compound-10" class="text-2xl font-serif font-bold text-sage-600 mt-1">NT$ 256,778</div>
+            <span class="text-[10px] text-tea-400 mt-0.5 block">（每年省下的現金再滾入資產池）</span>
+          </div>
+          <div class="p-4 rounded-xl bg-tea-50 border border-tea-200">
+            <span class="text-xs text-tea-500 block">20 年累積多賺本金</span>
+            <div id="txt-compound-20" class="text-2xl font-serif font-bold text-sage-700 mt-1">NT$ 675,000</div>
+            <span class="text-[10px] text-tea-400 mt-0.5 block">（超越一整年名義配息的長期倍增）</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 境外資產三層防火牆說明 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+        <div class="p-4 rounded-2xl bg-sage-50/50 border border-sage-200/80 text-xs space-y-1.5">
+          <div class="flex items-center space-x-2 text-sage-700 font-bold">
+            <span class="w-5 h-5 rounded-full bg-sage-200 flex items-center justify-center text-[10px]">1</span>
+            <span>免二代健保補充保費</span>
+          </div>
+          <p class="text-tea-600 leading-relaxed text-[11px]">
+            海外所得依法完全不屬於健保法規定的六類所得，每年配發多少息收，健保補充保費皆為 <strong>0 元</strong>。
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-sage-50/50 border border-sage-200/80 text-xs space-y-1.5">
+          <div class="flex items-center space-x-2 text-sage-700 font-bold">
+            <span class="w-5 h-5 rounded-full bg-sage-200 flex items-center justify-center text-[10px]">2</span>
+            <span>100 萬免申報安全門檻</span>
+          </div>
+          <p class="text-tea-600 leading-relaxed text-[11px]">
+            全申報戶全年海外所得總額（息收＋資本利得）未達 <strong>NT$ 100 萬</strong>，依法全數免計入基本所得額，零申報負擔。
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-sage-50/50 border border-sage-200/80 text-xs space-y-1.5">
+          <div class="flex items-center space-x-2 text-sage-700 font-bold">
+            <span class="w-5 h-5 rounded-full bg-sage-200 flex items-center justify-center text-[10px]">3</span>
+            <span>750 萬最低稅負免稅額</span>
+          </div>
+          <p class="text-tea-600 leading-relaxed text-[11px]">
+            個人基本所得額享有每年 <strong>NT$ 750 萬</strong>之免稅額度，且只在「基本稅額大於一般綜所稅」時才需補差額。
+          </p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- STEP 4: 常見境外替代工具導覽卡片 -->
+    <section class="bg-white rounded-3xl p-6 sm:p-8 border border-tea-200 shadow-card space-y-6">
+      <div class="flex items-center space-x-3 border-b border-tea-100 pb-3">
+        <div class="w-8 h-8 rounded-xl bg-tea-100 text-tea-700 flex items-center justify-center text-xs font-serif font-bold">03</div>
+        <div>
+          <h2 class="text-base sm:text-lg font-serif font-bold text-tea-900">常見優質境外替代工具導覽</h2>
+          <p class="text-xs text-tea-400">依您的現金流偏好與資金門檻，挑選最適合的無摩擦工具</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- 工具 1: 美元優質直債 -->
+        <div class="p-5 rounded-2xl bg-tea-50/70 border border-tea-200 flex flex-col justify-between space-y-4 hover:border-tea-400 transition">
+          <div class="space-y-2.5">
+            <div class="w-9 h-9 rounded-xl bg-tea-200 text-tea-800 flex items-center justify-center text-sm">
+              <i class="fa-solid fa-shield"></i>
+            </div>
+            <h4 class="font-serif font-bold text-sm text-tea-900">美元投資級直債 (Direct Bonds)</h4>
+            <p class="text-xs text-tea-600 leading-relaxed">
+              鎖定國際龍頭企業（如微軟、蘋果、巴菲特波克夏等）之票面利率，到期保本，利息全數認列為海外利息。
+            </p>
+            <div class="text-[11px] text-tea-500 space-y-1 pt-2 border-t border-tea-200">
+              <div class="flex justify-between"><span>適合族群：</span><span class="font-medium text-tea-800">追求確定現金流、大額本金</span></div>
+              <div class="flex justify-between"><span>稅務特點：</span><span class="font-bold text-sage-600">免二代健保、無預扣稅</span></div>
+            </div>
+          </div>
+          <span class="text-[10px] text-tea-400">常見入場門檻：1 萬 ~ 10 萬美元</span>
+        </div>
+
+        <!-- 工具 2: 境外主動基金 / 累積型 ETF -->
+        <div class="p-5 rounded-2xl bg-tea-50/70 border border-tea-200 flex flex-col justify-between space-y-4 hover:border-tea-400 transition">
+          <div class="space-y-2.5">
+            <div class="w-9 h-9 rounded-xl bg-tea-200 text-tea-800 flex items-center justify-center text-sm">
+              <i class="fa-solid fa-chart-pie"></i>
+            </div>
+            <h4 class="font-serif font-bold text-sm text-tea-900">境外多元基金 / 累積型標的</h4>
+            <p class="text-xs text-tea-600 leading-relaxed">
+              選擇配發「海外所得」之境外基金，或選擇不配息、將利息自動滾入淨值的累積型結構，徹底規避年度課稅事件。
+            </p>
+            <div class="text-[11px] text-tea-500 space-y-1 pt-2 border-t border-tea-200">
+              <div class="flex justify-between"><span>適合族群：</span><span class="font-medium text-tea-800">彈性配置、資產長期增值</span></div>
+              <div class="flex justify-between"><span>稅務特點：</span><span class="font-bold text-sage-600">延展課稅點、分散單一風險</span></div>
+            </div>
+          </div>
+          <span class="text-[10px] text-tea-400">常見入場門檻：無限制 / 數百美元起</span>
+        </div>
+
+        <!-- 工具 3: 境外多元資產憑證 / 保單架構 -->
+        <div class="p-5 rounded-2xl bg-tea-50/70 border border-tea-200 flex flex-col justify-between space-y-4 hover:border-tea-400 transition">
+          <div class="space-y-2.5">
+            <div class="w-9 h-9 rounded-xl bg-tea-200 text-tea-800 flex items-center justify-center text-sm">
+              <i class="fa-solid fa-landmark"></i>
+            </div>
+            <h4 class="font-serif font-bold text-sm text-tea-900">境外多元資產憑證 / 離岸架構</h4>
+            <p class="text-xs text-tea-600 leading-relaxed">
+              透過合法離岸保單或資產管理帳戶，實現多幣別配置、長期免稅複利滾存，兼具家族傳承與指定受益人功能。
+            </p>
+            <div class="text-[11px] text-tea-500 space-y-1 pt-2 border-t border-tea-200">
+              <div class="flex justify-between"><span>適合族群：</span><span class="font-medium text-tea-800">高資產族、傳承接班規劃</span></div>
+              <div class="flex justify-between"><span>稅務特點：</span><span class="font-bold text-sage-600">資產保全、隱私安全空間</span></div>
+            </div>
+          </div>
+          <span class="text-[10px] text-tea-400">常見入場門檻：專屬高階規劃</span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- STEP 5: 顧問諮詢 CTA 與 一鍵導出報告 -->
+    <section class="bg-tea-800 text-white rounded-3xl p-6 sm:p-8 shadow-card flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="space-y-2 text-center md:text-left">
+        <h3 class="text-xl sm:text-2xl font-serif font-bold">
+          想要依您的實際資產規模，精確客製境外安全配置？
+        </h3>
+        <p class="text-xs sm:text-sm text-tea-300 max-w-xl leading-relaxed">
+          點擊右側按鈕可一鍵複製完整的「個人稅費耗損診斷數據」，您可以直接將報告傳送給您的專屬財務顧問，開啟一對一境外資產配置諮詢。
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+        <button id="btn-export-bottom" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-sage-500 hover:bg-sage-600 text-white font-bold text-sm transition shadow-md active:scale-95 flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-copy"></i>
+          <span>一鍵複製診斷報告</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-tea-200 bg-tea-100/50 py-6 text-xs text-tea-500">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+      <div>
+        <span class="font-serif font-bold text-tea-800">TAX CRAFT JAPANESE-BIZ</span>
+        <span class="mx-1">•</span>
+        <span>高息資產隱形稅費體檢系統</span>
+      </div>
+      <p class="text-[11px] text-tea-400">
+        免責聲明：本工具公式依所得稅法、所得基本稅額條例與全民健康保險法現行標準設計，僅供資產配置參考，實際課稅結果以國稅局核定為準。
+      </p>
+    </div>
+  </footer>
+
+  <!-- Core Interactive Script -->
+  <script>
+    // State Variables
+    let selectedTaxRate = 0.20; // 預設 20%
+    const NHI_RATE = 0.0211;
+    const NHI_THRESHOLD = 20000;
+    const DIVIDEND_CREDIT_RATE = 0.085;
+    const DIVIDEND_CREDIT_MAX = 80000;
+
+    // DOM Elements
+    const rateBtns = document.querySelectorAll('.tax-rate-btn');
+    const bracketDesc = document.getElementById('bracket-desc');
+    const inpDividend = document.getElementById('inp-dividend');
+    const inpPortfolio = document.getElementById('inp-portfolio');
+    const quickDivBtns = document.querySelectorAll('.btn-quick-div');
+    const quickPortBtns = document.querySelectorAll('.btn-quick-port');
+    const sliderOffshore = document.getElementById('slider-offshore');
+    const txtSliderPercent = document.getElementById('txt-slider-percent');
+
+    // Display Elements - Pain Points
+    const txtAnnualFriction = document.getElementById('txt-annual-friction');
+    const txtFrictionSummary = document.getElementById('txt-friction-summary');
+    const txtTenYearFriction = document.getElementById('txt-ten-year-friction');
+    const cardNominalYield = document.getElementById('card-nominal-yield');
+    const cardNominalPayout = document.getElementById('card-nominal-payout');
+    const cardActualYield = document.getElementById('card-actual-yield');
+    const cardActualPayout = document.getElementById('card-actual-payout');
+    const cardTaxIncrease = document.getElementById('card-tax-increase');
+    const cardTaxCalcDetail = document.getElementById('card-tax-calc-detail');
+    const cardCreditUsed = document.getElementById('card-credit-used');
+    const cardNhiFee = document.getElementById('card-nhi-fee');
+    const cardFrictionPercent = document.getElementById('card-friction-percent');
+
+    // Display Elements - Solution Plan
+    const planOldCapital = document.getElementById('plan-old-capital');
+    const planOldGross = document.getElementById('plan-old-gross');
+    const planOldTax = document.getElementById('plan-old-tax');
+    const planOldNhi = document.getElementById('plan-old-nhi');
+    const planOldNet = document.getElementById('plan-old-net');
+
+    const planNewTitle = document.getElementById('plan-new-title');
+    const planNewOffshoreCap = document.getElementById('plan-new-offshore-cap');
+    const planNewOffshoreDiv = document.getElementById('plan-new-offshore-div');
+    const planNewOnshoreFric = document.getElementById('plan-new-onshore-fric');
+    const planNewAnnualSaved = document.getElementById('plan-new-annual-saved');
+    const planNewYieldPct = document.getElementById('plan-new-yield-pct');
+    const planNewNetTotal = document.getElementById('plan-new-net-total');
+
+    const txtCompound10 = document.getElementById('txt-compound-10');
+    const txtCompound20 = document.getElementById('txt-compound-20');
+
+    // Toast
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toast-text');
+
+    function fmtNTD(num) {
+      return 'NT$ ' + Math.round(num || 0).toLocaleString('en-US');
+    }
+
+    // Rate button events
+    rateBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        rateBtns.forEach(b => {
+          b.className = 'tax-rate-btn py-2 text-xs rounded-xl border border-tea-300 bg-white font-medium hover:bg-tea-100 transition';
+        });
+        btn.className = 'tax-rate-btn active-rate py-2 text-xs rounded-xl border-2 border-tea-700 bg-tea-700 text-white font-bold shadow-xs transition';
+        selectedTaxRate = parseFloat(btn.dataset.rate);
+
+        const rateMap = {
+          0.05: '5% 級距 (享 8.5% 扣抵增益)',
+          0.12: '12% 級距 (扣抵後實質 3.5%)',
+          0.20: '20% 級距 (實質摩擦 13.61%)',
+          0.30: '30% 級距 (採 28% 分開計稅)',
+          0.40: '40% 級距 (採 28% 分開計稅)'
+        };
+        bracketDesc.textContent = rateMap[selectedTaxRate] || `${selectedTaxRate * 100}% 級距`;
+        recalculate();
+      });
+    });
+
+    // Quick preset buttons
+    quickDivBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        inpDividend.value = btn.dataset.val;
+        recalculate();
+      });
+    });
+
+    quickPortBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        inpPortfolio.value = btn.dataset.val;
+        recalculate();
+      });
+    });
+
+    // Inputs listeners
+    inpDividend.addEventListener('input', recalculate);
+    inpPortfolio.addEventListener('input', recalculate);
+
+    // Slider listener
+    sliderOffshore.addEventListener('input', () => {
+      txtSliderPercent.textContent = `${sliderOffshore.value}%`;
+      recalculate();
+    });
+
+    // Calculation Engine
+    function calculateFriction(dividend, rate) {
+      if (dividend <= 0) return { taxInc: 0, creditUsed: 0, nhi: 0, totalFriction: 0, frictionRate: 0 };
+
+      let taxInc = 0;
+      let creditUsed = 0;
+
+      if (rate <= 0.20) {
+        // 合併計稅：稅率 × 股利 - 8.5% 抵減 (上限 8 萬)
+        const credit = Math.min(DIVIDEND_CREDIT_MAX, dividend * DIVIDEND_CREDIT_RATE);
+        creditUsed = credit;
+        const grossInc = dividend * rate;
+        taxInc = grossInc - credit; // 若小於 0 則為退稅效果
+      } else {
+        // 30% / 40% 分開計稅 28%
+        taxInc = dividend * 0.28;
+        creditUsed = 0;
+      }
+
+      // 二代健保
+      const nhi = (dividend >= NHI_THRESHOLD) ? (dividend * NHI_RATE) : 0;
+      const totalFriction = taxInc + nhi;
+      const frictionRate = (totalFriction / dividend) * 100;
+
+      return { taxInc, creditUsed, nhi, totalFriction, frictionRate };
+    }
+
+    function recalculate() {
+      const divTotal = Math.max(0, parseFloat(inpDividend.value) || 0);
+      const portfolio = Math.max(1, parseFloat(inpPortfolio.value) || 1);
+      const offshoreRatio = parseInt(sliderOffshore.value, 10) / 100;
+
+      // 1. 現況 (100% 境內)
+      const current = calculateFriction(divTotal, selectedTaxRate);
+      const nominalYield = (divTotal / portfolio) * 100;
+      const actualPayout = divTotal - current.totalFriction;
+      const actualYield = (actualPayout / portfolio) * 100;
+      const tenYearLoss = current.totalFriction * 10;
+
+      // Update Pain Points UI
+      txtAnnualFriction.textContent = fmtNTD(current.totalFriction);
+      txtTenYearFriction.textContent = fmtNTD(tenYearLoss);
+
+      if (selectedTaxRate === 0.05) {
+        txtFrictionSummary.innerHTML = `在 5% 稅率下，8.5% 抵減帶來了 3.5% 節稅利益，但若單次配息達 2 萬仍需負擔 2.11% 二代健保。`;
+      } else if (selectedTaxRate >= 0.30) {
+        txtFrictionSummary.innerHTML = `因您的所得落入高稅率，已自動套用 <strong>28% 分開計稅</strong>。加計二代健保 2.11%，每一百元股息實質摩擦高達 <strong>30.11%</strong>！`;
+      } else {
+        txtFrictionSummary.innerHTML = `以 <strong>${selectedTaxRate * 100}% 稅率</strong> 計算，扣除 8.5% 抵減後，加計 2.11% 健保費，每領 100 元股息就被吃掉 <strong>${current.frictionRate.toFixed(2)} 元</strong>。`;
+      }
+
+      cardNominalYield.textContent = `${nominalYield.toFixed(2)}%`;
+      cardNominalPayout.textContent = fmtNTD(divTotal);
+
+      cardActualYield.textContent = `${actualYield.toFixed(2)}%`;
+      cardActualPayout.textContent = fmtNTD(actualPayout);
+
+      cardTaxIncrease.textContent = current.taxInc < 0 ? `退稅 ${fmtNTD(Math.abs(current.taxInc))}` : fmtNTD(current.taxInc);
+      cardTaxCalcDetail.textContent = selectedTaxRate >= 0.30 ? '單一稅率 28% 分開計稅' : `稅率 ${(selectedTaxRate * 100)}% - 抵減 8.5%`;
+      cardCreditUsed.textContent = fmtNTD(current.creditUsed);
+      cardNhiFee.textContent = fmtNTD(current.nhi);
+      cardFrictionPercent.textContent = `${current.frictionRate.toFixed(2)}%`;
+
+      // 方案 A 資訊
+      planOldCapital.textContent = fmtNTD(portfolio);
+      planOldGross.textContent = fmtNTD(divTotal);
+      planOldTax.textContent = current.taxInc < 0 ? `+ 抵稅 ${fmtNTD(Math.abs(current.taxInc))}` : `- ${fmtNTD(current.taxInc)}`;
+      planOldNhi.textContent = `- ${fmtNTD(current.nhi)}`;
+      planOldNet.textContent = fmtNTD(actualPayout);
+
+      // 2. 方案 B：移轉至境外
+      const offshoreCapital = portfolio * offshoreRatio;
+      const offshoreDividend = divTotal * offshoreRatio;
+      const remainingOnshoreCapital = portfolio * (1 - offshoreRatio);
+      const remainingOnshoreDividend = divTotal * (1 - offshoreRatio);
+
+      // 境內剩餘部分之稅費
+      const remainingFriction = calculateFriction(remainingOnshoreDividend, selectedTaxRate);
+
+      // 境外部分：免健保、免綜所稅（在 100 萬免申報與 750 萬 AMT 內）
+      const newTotalNet = (offshoreDividend) + (remainingOnshoreDividend - remainingFriction.totalFriction);
+      const annualSaved = current.totalFriction - remainingFriction.totalFriction;
+      const newActualYield = (newTotalNet / portfolio) * 100;
+
+      planNewTitle.innerHTML = `<i class="fa-solid fa-earth-americas text-sage-600 mr-1.5"></i>方案 B：移轉 ${(offshoreRatio * 100).toFixed(0)}% 至境外優質資產`;
+      planNewOffshoreCap.textContent = fmtNTD(offshoreCapital);
+      planNewOffshoreDiv.textContent = `${fmtNTD(offshoreDividend)} (100%全拿)`;
+      planNewOnshoreFric.textContent = `- ${fmtNTD(remainingFriction.totalFriction)}`;
+      planNewAnnualSaved.textContent = `+ ${fmtNTD(annualSaved)}`;
+      planNewNetTotal.textContent = fmtNTD(newTotalNet);
+      planNewYieldPct.textContent = `實質落袋殖利率回升至 ${newActualYield.toFixed(2)}%`;
+
+      // 3. 複利滾存增益（5% 年化回滾省下的稅費）
+      // FV = annualSaved * [ ( (1 + r)^n - 1 ) / r ]
+      const r = 0.05;
+      const fv10 = annualSaved * ((Math.pow(1 + r, 10) - 1) / r);
+      const fv20 = annualSaved * ((Math.pow(1 + r, 20) - 1) / r);
+
+      txtCompound10.textContent = fmtNTD(fv10);
+      txtCompound20.textContent = fmtNTD(fv20);
+    }
+
+    // Copy Report Logic
+    function copyReportHandler() {
+      const divTotal = Math.max(0, parseFloat(inpDividend.value) || 0);
+      const portfolio = Math.max(1, parseFloat(inpPortfolio.value) || 1);
+      const offshoreRatio = parseInt(sliderOffshore.value, 10);
+      
+      const report = `【高息資產隱形稅費體檢與境外配置診斷書】
+==================================================
+一、您的現況輸入參數：
+  • 投資標的總市值：${fmtNTD(portfolio)}
+  • 每年境內配息 (54C)：${fmtNTD(divTotal)} (名義殖利率 ${(divTotal/portfolio*100).toFixed(2)}%)
+  • 綜合所得稅邊際級距：${(selectedTaxRate * 100)}%
+
+二、境內高息資產隱形痛點：
+  • 每年被扣除稅費摩擦：${txtAnnualFriction.textContent}
+    - 境內所得稅實質增額：${cardTaxIncrease.textContent}
+    - 二代健保補充保費 (2.11%)：${cardNhiFee.textContent}
+  • 實質稅費摩擦率：${cardFrictionPercent.textContent}
+  • 真正落袋殖利率：從名義 ${(divTotal/portfolio*100).toFixed(2)}% 縮水至 ${cardActualYield.textContent}
+  • 10 年無形送給國庫總額：${txtTenYearFriction.textContent}
+
+三、境外資產分流策略 (移轉 ${offshoreRatio}%)：
+  • 境外資產配置規模：${planNewOffshoreCap.textContent}
+  • 每年立即拿回現金流：每年現省 ${planNewAnnualSaved.textContent}
+  • 落袋殖利率回升至：${planNewYieldPct.textContent}
+  • 省下稅費以 5% 複利再滾存效益：
+    - 10 年累積多賺本金：${txtCompound10.textContent}
+    - 20 年累積多賺本金：${txtCompound20.textContent}
+
+四、境外三大法定防火牆優勢：
+  1. 免二代健保補充保費 (完全 0 扣繳)
+  2. 全年海外所得 100 萬以內免計入基本所得額
+  3. 享每年個人最低稅負 750 萬免稅額度
+==================================================
+體檢時間：${new Date().toLocaleDateString('zh-TW')}
+（請保留此報告，供財務顧問為您客製境外安全配置方案）`;
+
+      const textArea = document.createElement("textarea");
+      textArea.value = report;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showToast('已成功複製診斷報告至剪貼簿！');
+      } catch (err) {
+        showToast('複製失敗，請手動複製');
+      }
+      document.body.removeChild(textArea);
+    }
+
+    document.getElementById('btn-copy-report').addEventListener('click', copyReportHandler);
+    document.getElementById('btn-export-bottom').addEventListener('click', copyReportHandler);
+
+    function showToast(msg) {
+      toastText.textContent = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 2400);
+    }
+
+    // Run on startup
+    window.onload = function() {
+      recalculate();
+    };
+  </script>
+</body>
+</html>
