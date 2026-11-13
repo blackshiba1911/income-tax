@@ -538,5 +538,67 @@
     // 啟動初始化
     setTaxRate(0.20);
   </script>
+  <!-- 理財工具通用 Firebase 通行碼鎖（貼在 </body> 正上方） -->
+<div id="fb-lock-overlay" style="position:fixed;inset:0;background:#F7F3EE;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans TC',sans-serif;">
+  <div style="background:#FFF;border:1px solid #E2D6C8;border-radius:16px;padding:30px 24px;width:100%;max-width:360px;text-align:center;box-shadow:0 8px 25px rgba(62,51,42,0.08);">
+    <h2 style="margin:0 0 8px;color:#3E332A;font-size:1.25rem;">理財規劃工具驗證</h2>
+    <p style="margin:0 0 18px;color:#7D6E63;font-size:0.88rem;">請輸入專屬通行碼以開啟工具</p>
+    <input type="password" id="fb-pass-input" placeholder="請輸入通行碼" style="width:100%;padding:12px;border:1px solid #E2D6C8;border-radius:8px;font-size:1rem;text-align:center;letter-spacing:2px;margin-bottom:12px;box-sizing:border-box;outline:none;" onkeyup="if(event.key==='Enter') window.verifyFbPass()">
+    <div id="fb-pass-err" style="color:#B85D5D;font-size:0.82rem;margin-bottom:10px;display:none;">通行碼錯誤，請重新確認</div>
+    <button onclick="window.verifyFbPass()" style="width:100%;padding:12px;background:#8C6D53;color:#FFF;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;">確認進入</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const fbConfig = {
+    apiKey: "AIzaSyC9h2yeUnVWmtWWC45jlmDClE1THX3kHhQ",
+    authDomain: "financial-retirement-inherit.firebaseapp.com",
+    projectId: "financial-retirement-inherit",
+    storageBucket: "financial-retirement-inherit.firebasestorage.app",
+    messagingSenderId: "223910755502",
+    appId: "1:223910755502:web:f6c5e4a1bb54ee3e45813f",
+    measurementId: "G-0BN6752G91"
+  };
+
+  const app = getApps().length ? getApps()[0] : initializeApp(fbConfig);
+  const db = getFirestore(app);
+  // 全部理財工具共用同一把鑰匙；若某個工具想設獨立密碼，把 "global" 改成別的英文單字即可
+  const passDocRef = doc(db, "site_passwords", "global");
+
+  async function validatePass(inputPass, isSilent = false) {
+    try {
+      const snap = await getDoc(passDocRef);
+      let validPass = "1234"; // 首次啟動預設通行碼
+      if (snap.exists() && snap.data().passcode) {
+        validPass = snap.data().passcode;
+      } else {
+        await setDoc(passDocRef, { passcode: validPass });
+      }
+
+      if (inputPass === validPass) {
+        localStorage.setItem("finance_global_pass", inputPass);
+        document.getElementById("fb-lock-overlay").style.display = "none";
+      } else {
+        localStorage.removeItem("finance_global_pass");
+        if (!isSilent) {
+          document.getElementById("fb-pass-err").style.display = "block";
+        }
+      }
+    } catch (e) {
+      if (!isSilent) alert("連線失敗，請確認網路或資料庫規則。");
+    }
+  }
+
+  window.verifyFbPass = () => {
+    document.getElementById("fb-pass-err").style.display = "none";
+    validatePass(document.getElementById("fb-pass-input").value.trim(), false);
+  };
+
+  const cached = localStorage.getItem("finance_global_pass");
+  if (cached) validatePass(cached, true);
+</script>
 </body>
 </html>
