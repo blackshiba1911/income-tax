@@ -563,6 +563,9 @@
     measurementId: "G-0BN6752G91"
   };
 
+  // 設定預設密碼與斷網時的離線備援通行碼
+  const FALLBACK_PASS = "1372115";
+
   const app = getApps().length ? getApps()[0] : initializeApp(fbConfig);
   const db = getFirestore(app);
   const passDocRef = doc(db, "site_passwords", "global");
@@ -578,26 +581,32 @@
       return;
     }
 
+    let validPass = FALLBACK_PASS;
+
     try {
-      const snap = await getDoc(passDocRef);
-      let validPass = "1234"; // 首次啟動預設通行碼
+      // 設定 3 秒連線逾時：若網路太慢或斷線，不讓客戶久等，直接改用離線備援密碼核對
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000));
+      const snap = await Promise.race([getDoc(passDocRef), timeoutPromise]);
+
       if (snap.exists() && snap.data().passcode) {
         validPass = String(snap.data().passcode);
       } else {
         await setDoc(passDocRef, { passcode: validPass });
       }
-
-      if (inputPass === validPass) {
-        const overlay = document.getElementById("fb-lock-overlay");
-        if (overlay) overlay.style.setProperty("display", "none", "important");
-      } else {
-        errEl.textContent = "通行碼錯誤，請重新確認";
-        errEl.style.display = "block";
-      }
     } catch (e) {
-      alert("連線失敗，請確認網路或資料庫規則。");
+      // 斷網或訊號極差時自動使用 FALLBACK_PASS 進行核對
+      validPass = FALLBACK_PASS;
+    }
+
+    if (inputPass === validPass) {
+      const overlay = document.getElementById("fb-lock-overlay");
+      if (overlay) overlay.style.setProperty("display", "none", "important");
+    } else {
+      errEl.textContent = "通行碼錯誤，請重新確認";
+      errEl.style.display = "block";
     }
   };
 </script>
+
 </body>
 </html>
